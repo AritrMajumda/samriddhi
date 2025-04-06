@@ -1,19 +1,18 @@
 from flask import Flask, request, jsonify
 from flask_socketio import SocketIO, emit
 from datetime import datetime
+from flask import render_template
 from firebase_admin import credentials, firestore
 import firebase_admin
 import os
 import json
-
-# Initialize Flask app
 app = Flask(__name__)
-socketio = SocketIO(app)
+CORS(app, resources={r"/socket.io/*": {"origins": "*"}})
+socketio = SocketIO(app, cors_allowed_origins="*")
 from datetime import datetime
 from firebase_admin import credentials, firestore
 import firebase_admin
 import os
-# Initialize Firebase with error handling
 try:
     if os.getenv('FIREBASE_CRED'):  # For Heroku
         crd = json.loads(os.getenv('FIREBASE_CRED'))
@@ -53,3 +52,125 @@ class Chatroom:
             'moderators': self.moderators,
             'muted_users': self.muted_users
         })
+
+    def add_user(self, username, is_moderator=False):
+        if username not in self.users and username not in self.moderators:
+            if is_moderator:
+                self.moderators.append(username)
+            else:
+                self.users.append(username)
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            self.messages.append(f"[{timestamp}] System: {username} has joined {self.name}")
+            self.save_messages()
+            self.update_user_history(username, f"Joined {self.name}")
+            return True
+        return False
+
+    def remove_user(self, username):
+        if username in self.users:
+            self.users.remove(username)
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            self.messages.append(f"[{timestamp}] System: {username} has left {self.name}")
+            self.save_messages()
+            self.update_user_history(username, f"Left {self.name}")
+            return True
+        elif username in self.moderators:
+            self.moderators.remove(username)
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            self.messages.append(f"[{timestamp}] System: Moderator {username} has left {self.name}")
+            self.save_messages()
+            self.update_user_history(username, f"Left {self.name}")
+            return True
+        return False
+
+    def add_message(self, username, message):
+        if (username in self.users or username in self.moderators) and username not in self.muted_users:
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            msg = f"[{timestamp}] {username}: {message}"
+            self.messages.append(msg)
+            self.save_messages()
+            self.update_user_history(username, message)
+            return True
+        return False
+
+    def update_user_history(self, username, action):
+        user_ref = db.collection('users').document(username)
+        user_doc = user_ref.get()
+        if user_doc.exists:
+            history = user_doc.to_dict().get('chat_history', [])
+            history.append({'room': self.name, 'action': action, 'timestamp': timestamp})
+            user_ref.update({'chat_history': history})
+
+    def kick_user(self, moderator, target):  # Added missing method
+        if moderator in self.moderators and target in self.users:
+            self.users.remove(target)
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            self.messages.append(f"[{timestamp}] System: {target} was kicked by {moderator}")
+            self.save_messages()
+            self.update_user_history(target, f"Kicked from {self.name} by {moderator}")
+            return True
+        return False
+
+class ChatSystem:
+    def __init__(self):
+        self.chatrooms = {
+            "General": Chatroom("General"),
+            "Random": Chatroom("Random"),
+            "Tech": Chatroom("Tech")
+        }
+
+    def create_chatroom(self, name, creator):
+        if name not in self.chatrooms:
+            self.chatrooms[name] = Chatroom(name)
+            self.chatrooms[name].add_user(creator, is_moderator=True)  # Creator becomes moderator
+            return True
+        return False
+
+    def get_chatroom(self, name):
+        return self.chatrooms.get(name)
+
+    def list_chatrooms(self):
+        return list(self.chatrooms.keys())
+
+chat_system = ChatSystem()
+@app.route('/chatrooms', methods=['GET'])
+def get_chatrooms():
+    return jsonify({"chatrooms": chat_system.list_chatrooms()})
+
+@app.route('/create_chatroom', methods=['POST'])
+def create_chatroom():
+    data = request.get_json()
+    if not data or 'name' not in data or 'username' not in data:
+        return jsonify({"error": "Missing name or username"}), 400
+    name = data.get('name')
+    username = data.get('username')
+    if chat_system.create_chatroom(name, username):
+        return jsonify({"message": f"Chatroom {name} created"}), 201
+    return jsonify({"error": "Chatroom already exists"}), 400
+
+@socketio.on('join')
+def handle_join(data):
+    username = data['username']
+    room = data['room']
+    is_moderator = data.get('is_moderator', False)
+    chatroom = chat_system.get_chatroom(room)
+    if chatroom and chatroom.add_user(username, is_moderator):
+        emit('message', chatroom.messages[-5:], room=room, broadcast=True)
+
+@socketio.on('message')
+def handle_message(data):
+    username = data['username']
+    room = data['room']
+    message = data['message']
+    chatroom = chat_system.get_chatroom(room)
+    if chatroom and chatroom.add_message(username, message):
+        emit('message', chatroom.messages[-5:], room=room, broadcast=True)
+
+@socketio.on('kick')
+def handle_kick(data):
+    moderator = data['moderator']
+    target = data['target']
+    room = data['room']
+    chatroom = chat_system.get_chatroom(room)
+    if chatroom and chatroom.kick_user(moderator, target):
+        emit('message', chatroom.messages[-5:], room=room, broadcast=True)
