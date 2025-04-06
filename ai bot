@@ -1,10 +1,21 @@
+import os
+import google.generativeai as ggenai
 import speech_recognition as sr
 import requests
-import google.generativeai as ggenai
-gak = "AIzaSyDQXkyG0ECGKKJzD5nRqMLTN0gJepmY2E0"  
+from googlesearch import search
+
+# Configure Gemini API
+gak = "AIzaSyDQXkyG0ECGKKJzD5nRqMLTN0gJepmY2E0"  # Your API key
 ggenai.configure(api_key=gak)
 m = ggenai.GenerativeModel('gemini-1.5-flash')
-Lang = {"english": "e","hindi": "h","bengali": "b"}
+
+# Supported languages with proper language codes for Google Speech Recognition
+Lang = {
+    "english": "en-IN",  # Indian English
+    "hindi": "hi-IN",    # Hindi
+    "bengali": "bn-IN"   # Bengali
+}
+
 def getres(pr, la="english"):
     tpr = f"Provide information about Indian government schemes or legal terms (old or new) related to: {pr}. Respond only in {la}."
     try:
@@ -12,22 +23,27 @@ def getres(pr, la="english"):
         return res.text
     except Exception as e:
         return f"Error generating res: {str(e)}"
+
 def gvi(la_code):
+    """Capture voice input and convert it to text."""
     rec = sr.Recognizer()
     with sr.Microphone() as source:
-        print("You can speak now.")
-        rec.adjust_for_ambient_noise(source, duration=1) 
+        print("Please speak your question...")
+        rec.adjust_for_ambient_noise(source, duration=1)  # Adjust for background noise
         au = rec.listen(source)
+    
     try:
-        text = rec.recognize_google(au, la=la_code)
+        # Recognize speech based on the selected language
+        text = rec.recognize_google(au, language=la_code)  # Fixed keyword from 'la' to 'language'
         print(f"You said: {text}")
         return text
     except sr.UnknownValueError:
-        return "Sorry, Can you tell me abit more clearly?"
+        return "Sorry, can you tell me a bit more clearly?"
     except sr.RequestError as e:
         return f"Error with speech recognition: {str(e)}"
+
 def gsl(q):
-   
+    """Fetch a relevant link based on the query."""
     try:
         for url in search(f"Indian government schemes or laws {q}", num_results=1):
             return url
@@ -39,4 +55,51 @@ def glc(pr):
         c = input(pr).lower()
         if c in Lang:
             return c
-        print("you have given Unsupported language. Please choose between: English, Hindi, Bengali.")
+        print("You have given an unsupported language. Please choose between: English, Hindi, Bengali.")
+
+def gim():
+    while True:
+        c = input("How would you like to ask the question? (text/voice): ").lower()
+        if c in ["text", "voice"]:
+            return c
+        print("Please choose between the given two choices 'text' or 'voice'.")
+
+def ai_bot():
+    """Main function to run the AI bot."""
+    print("Welcome to the Indian Govt Schemes & Laws Bot! Type 'exit' to quit.")
+    print("Supported languages: English, Hindi, Bengali")
+
+    # Ask for language preferences once at the start
+    input_lang = glc("What language would you like to use for asking questions? (english/hindi/bengali): ")
+    reply_lang = glc("What language would you like the text replies in? (english/hindi/bengali): ")
+
+    input_lang_code = Lang[input_lang]
+    reply_lang_code = Lang[reply_lang]
+
+    print(f"\nYou will ask questions in {input_lang} and read replies in {reply_lang}.")
+
+    # Ask for input method once
+    input_method = gim()
+    print(f"You chose to ask questions via {input_method}.")
+
+    while True:
+        # Get user input based on chosen method
+        if input_method == "text":
+            user_input = input(f"\nEnter your question (in {input_lang}): ").strip()
+        else:  # voice
+            user_input = gvi(input_lang_code)
+
+        if user_input.lower() == "exit":
+            print("Goodbye!")
+            break
+
+        # Get response from Gemini tailored to Indian govt schemes and laws
+        res = getres(user_input, la=reply_lang)
+        print(f"\nResponse (in {reply_lang}): {res}")
+
+        # Provide a smart link
+        link = gsl(user_input)
+        print(f"Source Link: {link}")
+
+if __name__ == "__main__":
+    ai_bot()
