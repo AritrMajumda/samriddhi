@@ -1,8 +1,55 @@
 from flask import Flask, request, jsonify
 from flask_socketio import SocketIO, emit
-
+from datetime import datetime
+from firebase_admin import credentials, firestore
+import firebase_admin
+import os
 import json
 
 # Initialize Flask app
 app = Flask(__name__)
 socketio = SocketIO(app)
+from datetime import datetime
+from firebase_admin import credentials, firestore
+import firebase_admin
+import os
+# Initialize Firebase with error handling
+try:
+    if os.getenv('FIREBASE_CRED'):  # For Heroku
+        crd = json.loads(os.getenv('FIREBASE_CRED'))
+        cr = credentials.Certificate(crd)
+    else:  # Local
+        cr = credentials.Certificate("C:\stock market\serviceaccountkey.json")
+    firebase_admin.initialize_app(cr)
+    db = firestore.client()
+    # Test database connection
+    try:
+        db.collection('test').document('check').set({'status': 'ok'})
+        print("Firestore initialized successfully")
+    except Exception as e:
+        print(f"Firestore database not accessible: {e}")
+        raise
+except Exception as e:
+    print(f"Firebase initialization failed: {e}")
+    raise
+
+class Chatroom:
+    def __init__(self, name):
+        self.name = name
+        self.users = []
+        self.moderators = []
+        self.muted_users = []
+        self.messages = self.load_messages()
+
+    def load_messages(self):
+        doc_ref = db.collection('chatrooms').document(self.name)
+        doc = doc_ref.get()
+        return doc.to_dict().get('messages', []) if doc.exists else []
+
+    def save_messages(self):
+        db.collection('chatrooms').document(self.name).set({
+            'messages': self.messages,
+            'users': self.users,
+            'moderators': self.moderators,
+            'muted_users': self.muted_users
+        })
