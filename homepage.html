@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, userscalable=no">
+        <title>Samriddhi</title>
+        <link rel="stylesheet" type="text/css" href="upgrade.css">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Parisienne&display=swap" rel="stylesheet">
+
+    </head>
+    <body>
+        <div class="container">
+        <div class="background-image">
+           
+           
+           
+            <div class="menu">
+                <div class="heading">
+                   <img src="Screenshot 2025-03-30 010617.png">
+                
+                </div>
+                
+            
+                        
+                <u1>
+                    <li><a href="home.html">HOME</a></li>
+                    <li><a href="contact.html">CONTACT</a></li>
+                    <li><a href="about.html">ABOUT</a>
+                    <li><a href="register.html">REGISTER</a></li>
+                    
+                </u1>
+                </div>
+                <div class="search-bar">
+                <input class="search" type="text" placeholder="Search">
+              <a href="button.html"><button class="search-button">Search</button></a>
+            </div>
+            <div class="form">
+                <h3>LOGIN</h3>
+                
+            <input type="text" id="phone" placeholder="Enter phone number" oninput="validateForm()" />
+            <br>
+
+            <input type="password" id="password" placeholder="Enter password" oninput="validateForm()" />
+            <br><br>
+            <button id="loginBtn" disabled onclick="login()">Login</button>
+                <p class="account">Don't have an account</p><br>
+                <a href="register.html"><button class="register">Register</button></a>
+                <a href="forgot.html"><button class="forgot">Forgot password</button></a>            
+            </div>
+
+            <label class="schemes">
+            <select class="schemes"name="schemes" onchange="redirectToLink(this.value)">
+                <option value="0.">Select Scheme</option>
+                <option value="https://nrega.nic.in/MGNREGA_new/Nrega_home.aspx">Mahatma Gandhi National Rural Employment Guarantee Act</option>
+                <option value="https://www.india.gov.in/spotlight/ayushman-bharat-pradhan-mantri-jan-arogya-yojana"><a href="#"target="_blank">Pradhan Mantri Jan Arogya Yojana</a></option>
+                <option value="https://www.myscheme.gov.in/schemes/ddugku"><a href="#"target="_blank">Deen Dayal Upadhyaya Grameen Kaushalya Yojana </a></option>
+                <option value="https://missionantyodaya.nic.in/"><a href="#"target="_blank">MISSION ANTODAYA</a></option>   
+                <option value="https://nsap.nic.in/"><a href="#"target="_blank">NSAP</a></option>
+                <option value="https://saanjhi.gov.in/"><a href="#"target="_blank">SAGY</a></option>
+                <option value="https://nrlm.gov.in/outerReportAction.do?methodName=showIndex#gsc.tab=0"><a href="#"target="_blank">NRLM</a></option>
+                <option value="https://rurban.gov.in/#gsc.tab=0"><a href="#"target="_blank">SPMRM</a></option>
+                <option value="https://www.pmksy.gov.in/"><a href="#"target="_blank">PMKSY</a></option>
+                <option value="https://omms.nic.in/"><a href="#"target="_blank">PMGSY</a></option>
+                <option value="https://pmay-urban.gov.in/pmay-u-2.0-guidelines"><a href="#"target="_blank">PMAY</a></option>
+                <option value="https://pmfby.gov.in/"><a href="#"target="_blank">PMFBY</a></option>
+            </select>
+            </label>
+                       
+                 
+            <script src="homepage.js"></script>
+            <div >
+                <button id="nextbtn" onclick="goToNextPage()">NEXT</button>
+           
+           
+    </div>
+     </div>
+    </div></div> </div>
+    </body>
+
+        
+       
+            </html>
