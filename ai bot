@@ -12,9 +12,31 @@ def getres(pr, la="english"):
         return res.text
     except Exception as e:
         return f"Error generating res: {str(e)}"
-def get_voice_input(la_code):
+def gvi(la_code):
     rec = sr.Recognizer()
     with sr.Microphone() as source:
         print("You can speak now.")
         rec.adjust_for_ambient_noise(source, duration=1) 
         au = rec.listen(source)
+    try:
+        text = rec.recognize_google(au, la=la_code)
+        print(f"You said: {text}")
+        return text
+    except sr.UnknownValueError:
+        return "Sorry, Can you tell me abit more clearly?"
+    except sr.RequestError as e:
+        return f"Error with speech recognition: {str(e)}"
+def gsl(q):
+   
+    try:
+        for url in search(f"Indian government schemes or laws {q}", num_results=1):
+            return url
+    except Exception as e:
+        return f"Error fetching link: {str(e)}"
+
+def glc(pr):
+    while True:
+        c = input(pr).lower()
+        if c in Lang:
+            return c
+        print("you have given Unsupported language. Please choose between: English, Hindi, Bengali.")
