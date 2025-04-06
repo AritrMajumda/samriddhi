@@ -1,0 +1,52 @@
+ <script>
+        async function sendmessage() {
+            const input = document.getElementById('Input');
+            const message = input.value.trim();
+            const messagesContainer = document.getElementById('messages');
+
+            if (!message) {
+                displayMessage("Please enter a message ", true);
+                return;
+            }
+
+            // Display the user's message
+            displayMessage(`You: ${message}`);
+            input.value = ''; // Clear input field
+
+            try {
+                // Show loading indicator
+                displayMessage("AI is typing...");
+
+                const response = await fetch('http://localhost:5000/predict', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: message })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Server error: ${response.status}`);
+                }
+
+                const data = await response.json();
+                const aiPrediction = data.prediction;
+
+                // Remove loading message and display AI's response
+                messagesContainer.lastChild.remove();
+                displayMessage(`AI: ${aiPrediction}`);
+            } catch (error) {
+                console.error("Error:", error);
+                messagesContainer.lastChild.remove(); // Remove loading message
+                displayMessage(`❌ Error: ${error.message}`, true);
+            }
+
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function displayMessage(msg, isError = false) {
+            const messagesContainer = document.getElementById('messages');
+            const newMessage = document.createElement('div');
+            newMessage.textContent = msg;
+            newMessage.className = isError ? 'error' : '';
+            messagesContainer.appendChild(newMessage);
+        }
+    </script>
