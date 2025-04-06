@@ -1,0 +1,6 @@
+import google.generativeai as ggenai
+gak = "AIzaSyDQXkyG0ECGKKJzD5nRqMLTN0gJepmY2E0"  
+ggenai.configure(api_key=gak)
+m = ggenai.GenerativeModel('gemini-1.5-flash')
+
+Lang = {"english": "e","hindi": "h","bengali": "b"}
