@@ -1,0 +1,80 @@
+from flask import Flask, request, jsonify
+from firebase_admin import credentials, firestore
+import firebase_admin
+import os
+import json
+
+app = Flask(__name__)
+
+
+try:
+    if os.getenv('FIREBASE_CRED'): 
+        crd = json.loads(os.getenv('FIREBASE_CRED'))
+        cred = credentials.Certificate(crd)
+    else:
+        cred = credentials.Certificate("C:\stock market\serviceaccountkey.json")
+    firebase_admin.initialize_app(cred)
+    db = firestore.client()
+
+    db.collection('test').document('check').set({'status': 'ok'})
+    print("Firestore initialized successfully")
+except Exception as e:
+    print(f"Firebase initialization failed: {e}")
+    raise
+
+@app.route('/register', methods=['POST'])
+def register():
+    try:
+        data = request.get_json()
+        if not data or 'username' not in data or 'password' not in data:
+            return jsonify({"error": "Missing username or password"}), 400
+        
+        username = data['username']
+        password = data['password']
+
+        user_ref = db.collection('users').document(username)
+        if user_ref.get().exists:
+            return jsonify({"error": "Username already taken"}), 400
+
+        user_ref.set({
+            'username': username,
+            'password': password,
+            'chat_history': [],
+            'created_at': firestore.SERVER_TIMESTAMP
+        })
+        return jsonify({"message": "Registration successful"}), 201
+    except Exception as e:
+        print(f"Error in register: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/login', methods=['POST'])
+def login():
+    try:
+        data = request.get_json()
+        if not data or 'username' not in data or 'password' not in data:
+            return jsonify({"error": "Missing username or password"}), 400
+        
+        username = data['username']
+        password = data['password']
+
+        user_ref = db.collection('users').document(username)
+        user_doc = user_ref.get()
+        if user_doc.exists and user_doc.to_dict()['password'] == password:
+            return jsonify({"message": "Login successful", "username": username}), 200
+        return jsonify({"error": "Invalid credentials"}), 401
+    except Exception as e:
+        print(f"Error in login: {e}")
+        return jsonify({"error": str(e)}), 500
+@app.route('/chat', methods=['POST'])
+def add_chat():
+    data = request.get_json()
+    username = data['username']
+    message = data['message']
+    user_ref = db.collection('users').document(username)
+    user_ref.update({
+        'chat_history': firestore.ArrayUnion([message])
+    })
+    return jsonify({"message": "Chat added"}), 200
+
+if __name__ == '__main__':
+    app.run(debug=True)
