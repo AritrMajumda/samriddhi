@@ -1,19 +1,29 @@
 import os
 import google.generativeai as ggenai
 import speech_recognition as sr
+from gtts import gTTS
+import pygame.mixer
+import time
 import requests
 from googlesearch import search
 
 # Configure Gemini API
-gak = "AIzaSyDQXkyG0ECGKKJzD5nRqMLTN0gJepmY2E0"  # Your API key
+gak = "AIzaSyDQXkyG0ECGKKJzD5nRqMLTN0gJepmY2E0"  # Replace with your API key
 ggenai.configure(api_key=gak)
 m = ggenai.GenerativeModel('gemini-1.5-flash')
 
-# Supported languages with proper language codes for Google Speech Recognition
+# Supported languages with codes for speech recognition and TTS
 Lang = {
     "english": "en-IN",  # Indian English
     "hindi": "hi-IN",    # Hindi
     "bengali": "bn-IN"   # Bengali
+}
+
+# Mapping for gTTS (uses simpler codes without region)
+TTS_Lang = {
+    "english": "en",
+    "hindi": "hi",
+    "bengali": "bn"
 }
 
 def getres(pr, la="english"):
@@ -22,25 +32,57 @@ def getres(pr, la="english"):
         res = m.generate_content(tpr)
         return res.text
     except Exception as e:
-        return f"Error generating res: {str(e)}"
+        return f"Error generating response: {str(e)}"
 
 def gvi(la_code):
     """Capture voice input and convert it to text."""
     rec = sr.Recognizer()
     with sr.Microphone() as source:
         print("Please speak your question...")
-        rec.adjust_for_ambient_noise(source, duration=1)  # Adjust for background noise
+        rec.adjust_for_ambient_noise(source, duration=1)
         au = rec.listen(source)
     
     try:
-        # Recognize speech based on the selected language
-        text = rec.recognize_google(au, language=la_code)  # Fixed keyword from 'la' to 'language'
+        text = rec.recognize_google(au, language=la_code)
         print(f"You said: {text}")
         return text
     except sr.UnknownValueError:
         return "Sorry, can you tell me a bit more clearly?"
-    except sr.RequestError as e:
+    except sr.RequestError as e:  # Fixed syntax here
         return f"Error with speech recognition: {str(e)}"
+
+def text_to_speech(text, language):
+    """Convert text to speech and play it using pygame.mixer."""
+    audio_file = f"output_{int(time.time())}.mp3"  # Unique filename
+    try:
+        if not text or text.isspace():
+            print("No text to convert to speech.")
+            return
+        
+        tts = gTTS(text=text, lang=TTS_Lang[language], slow=False)
+        tts.save(audio_file)
+        print(f"Audio file saved as {audio_file}")
+
+        pygame.mixer.init()
+        pygame.mixer.music.load(audio_file)
+        pygame.mixer.music.play()
+        print("Audio playback started.")
+
+        while pygame.mixer.music.get_busy():
+            time.sleep(0.1)
+
+        pygame.mixer.music.unload()
+        if os.path.exists(audio_file):
+            os.remove(audio_file)
+            print("Audio file deleted.")
+    except Exception as e:
+        print(f"Error in text-to-speech: {str(e)}")
+        if os.path.exists(audio_file):
+            try:
+                os.remove(audio_file)
+                print("Audio file deleted despite error.")
+            except:
+                print("Failed to clean up audio file.")
 
 def gsl(q):
     """Fetch a relevant link based on the query."""
@@ -71,12 +113,12 @@ def ai_bot():
 
     # Ask for language preferences once at the start
     input_lang = glc("What language would you like to use for asking questions? (english/hindi/bengali): ")
-    reply_lang = glc("What language would you like the text replies in? (english/hindi/bengali): ")
+    reply_lang = glc("What language would you like the replies in? (english/hindi/bengali): ")
 
     input_lang_code = Lang[input_lang]
     reply_lang_code = Lang[reply_lang]
 
-    print(f"\nYou will ask questions in {input_lang} and read replies in {reply_lang}.")
+    print(f"\nYou will ask questions in {input_lang} and get replies in {reply_lang} (text and voice).")
 
     # Ask for input method once
     input_method = gim()
@@ -93,9 +135,12 @@ def ai_bot():
             print("Goodbye!")
             break
 
-        # Get response from Gemini tailored to Indian govt schemes and laws
+        # Get response from Gemini
         res = getres(user_input, la=reply_lang)
         print(f"\nResponse (in {reply_lang}): {res}")
+
+        # Speak the response in the reply language
+        text_to_speech(res, reply_lang)
 
         # Provide a smart link
         link = gsl(user_input)
