@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Chat Interface</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+        #chatContainer {
+            width: 100%;
+            max-width: 500px;
+            background: white;
+            border: 1px solid #ccc;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        #messages {
+            border: 1px solid #ddd;
+            padding: 10px;
+            height: 300px;
+            overflow-y: auto;
+            margin-bottom: 10px;
+            background: #f5f5f5;
+        }
+        #Input {
+            width: calc(100% - 60px);
+            padding: 10px;
+            margin-right: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+        #background-image2 {
+            background-image: url('https://png.pngtree.com/thumb_back/fh260/background/20220916/pngtree-green-wallpaper-background-hd-cool-abstract-gradient-free-vectors-image_1464715.jpg');
+            background-size: cover;
+            height: 100vh;
+            margin: 0;
+            width: 100%;
+            border-color: black;
+            border-radius: 2px;
+            padding: 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="background-image2">
+    <div id="chatContainer">
+        <h2>AI Chat </h2>
+        <div id="messages"></div>
+        <input type="text" id="Input" placeholder="Type your message..." />
+        <button onclick="sendmessage()">Send</button>
+    </div>
+
+  
+</body>
+</html>
