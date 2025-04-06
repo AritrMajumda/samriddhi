@@ -1,6 +1,20 @@
+import speech_recognition as sr
+import requests
 import google.generativeai as ggenai
 gak = "AIzaSyDQXkyG0ECGKKJzD5nRqMLTN0gJepmY2E0"  
 ggenai.configure(api_key=gak)
 m = ggenai.GenerativeModel('gemini-1.5-flash')
-
 Lang = {"english": "e","hindi": "h","bengali": "b"}
+def getres(pr, la="english"):
+    tpr = f"Provide information about Indian government schemes or legal terms (old or new) related to: {pr}. Respond only in {la}."
+    try:
+        res = m.generate_content(tpr)
+        return res.text
+    except Exception as e:
+        return f"Error generating res: {str(e)}"
+def get_voice_input(la_code):
+    rec = sr.Recognizer()
+    with sr.Microphone() as source:
+        print("You can speak now.")
+        rec.adjust_for_ambient_noise(source, duration=1) 
+        au = rec.listen(source)
